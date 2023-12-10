@@ -12,7 +12,7 @@ def load_config(config_path):
         print(f"Error: Config file '{config_path}' not found.")
         return None
 
-def controller(tomlpath, researcher_name):
+def controller(tomlpath, researcher_name, affiliation = None):
 
     if tomlpath:
         config = load_config(tomlpath)
@@ -27,7 +27,8 @@ def controller(tomlpath, researcher_name):
 
     api = orcid.PublicAPI(Client_ID, Client_secret)
     search_token = api.get_search_token_from_orcid()
-    search_results = api.search(researcher_name, access_token=search_token)
+    query = f'{researcher_name}+{affiliation if affiliation else ""}'
+    search_results = api.search(query, access_token=search_token)
     return search_results
 
 def main():
@@ -41,10 +42,12 @@ def main():
     researcher_name = input("Enter researcher's name: ")
     affiliation = input("Enter affiliation: ")
 
-    orcid_number = controller(args.tomlpath, researcher_name)
-
-    if orcid_number:
-        print(f"ORCID for {researcher_name} with affiliation {affiliation}: {orcid_number}")
+    orcid_results = controller(args.tomlpath, researcher_name, affiliation = affiliation)
+    if orcid_results and 'result' in orcid_results:
+        first_result = orcid_results['result'][0]
+        orcid_identifier = first_result['orcid-identifier']['uri']
+        orcid_number = first_result['orcid-identifier']['path']
+        print(f"ORCID for {researcher_name} with affiliation {affiliation}: {orcid_number} and uri {orcid_identifier}")
     else:
         print(f"ORCID not found for {researcher_name} with affiliation {affiliation}")
 
